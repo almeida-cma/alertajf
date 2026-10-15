@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlertaJF - Sistema de Informação e Gestão de Riscos Urbanos</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Cabeçalho -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="icon">🛡️</span>
+      <h1>Alerta<strong>JF</strong> <small>| Gestão e Prevenção de Riscos</small></h1>
+    </div>
+    <div class="header-actions">
+      <button id="btn-disclaimer" class="btn-link-header">ℹ️ Sobre os Dados</button>
+      <button id="btn-open-create" class="btn-primary">+ Novo Registro</button>
+    </div>
+  </header>
+
+  <!-- Barra de Pesquisa e GPS -->
+  <section class="action-bar">
+    <form id="search-form" class="search-box">
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Pesquise uma rua ou bairro (Ex: Rua Halfeld, Mariano Procópio)..." 
+        required 
+      />
+      <button type="submit" class="btn-search">Buscar Endereço</button>
+    </form>
+    <button id="btn-gps" class="btn-secondary" title="Usar localização atual">
+      📍 Minha Localização
+    </button>
+  </section>
+
+  <!-- Layout Principal Dividido -->
+  <main class="main-layout">
+    <!-- Lado Esquerdo: Mapa com as Camadas Oficiais -->
+    <section class="map-section">
+      <div id="map"></div>
+      
+      <!-- Legenda Visual R1-R4 -->
+      <div class="map-legend">
+        <strong>Escala Oficial Defesa Civil (PJF):</strong>
+        <span class="legend-item"><i class="bg-r4"></i> R4 (Muito Alto)</span>
+        <span class="legend-item"><i class="bg-r3"></i> R3 (Alto)</span>
+        <span class="legend-item"><i class="bg-r2"></i> R2 (Moderado)</span>
+        <span class="legend-item"><i class="bg-r1"></i> R1 (Baixo)</span>
+      </div>
+    </section>
+
+    <!-- Lado Direito: Diagnóstico Cidadão + CRUD LocalStorage -->
+    <aside class="sidebar">
+      <!-- Painel 1: Diagnóstico da Consulta Cidadã -->
+      <section class="card" id="diagnosis-card">
+        <h2>Diagnóstico do Local Selecionado</h2>
+        <p class="hint-text">Clique em qualquer ponto do mapa ou faça uma busca acima.</p>
+        
+        <div id="result-content" class="hidden">
+          <!-- Injetado dinamicamente via AlertView.js -->
+        </div>
+      </section>
+
+      <!-- Painel 2: CRUD de Ocorrências e Alertas Rápidos -->
+      <section class="card crud-card">
+        <div class="crud-header">
+          <h2>Alertas e Pontos Salvos</h2>
+          <span class="badge-count" id="alerts-count">0 registros</span>
+        </div>
+
+        <!-- Filtros Rápidos -->
+        <div class="filters-row">
+          <select id="filter-level">
+            <option value="TODOS">Todos os Níveis</option>
+            <option value="R4">Apenas R4 (Muito Alto)</option>
+            <option value="R3">Apenas R3 (Alto)</option>
+            <option value="R2">Apenas R2 (Moderado)</option>
+            <option value="R1">Apenas R1 (Baixo)</option>
+          </select>
+
+          <select id="filter-threat">
+            <option value="TODOS">Todas as Ameaças</option>
+            <option value="Inundação">Inundação</option>
+            <option value="Enxurrada">Enxurrada</option>
+            <option value="Corrida de Massa">Corrida de Massa / Deslizamento</option>
+            <option value="Ponto de Atenção">Ponto de Atenção Geral</option>
+          </select>
+        </div>
+
+        <!-- Lista do CRUD -->
+        <div class="alerts-list" id="alerts-list">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- MODAL 1: Formulário de Cadastro e Edição (Create / Update) -->
+  <div class="modal-overlay hidden" id="modal-form">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Registrar Alerta / Ponto de Atenção</h3>
+        <button id="btn-close-modal" class="btn-close">&times;</button>
+      </div>
+
+      <form id="alert-form">
+        <input type="hidden" id="form-id" />
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-local">Bairro / Localidade *</label>
+            <input type="text" id="form-local" required placeholder="Ex: Av. Brasil / Mariano Procópio" />
+          </div>
+
+          <div class="form-group">
+            <label for="form-threat">Tipologia da Ameaça *</label>
+            <select id="form-threat" required>
+              <option value="Inundação">Inundação (Calha fluvial)</option>
+              <option value="Enxurrada">Enxurrada (Vias públicas)</option>
+              <option value="Corrida de Massa">Corrida de Massa / Deslizamento</option>
+              <option value="Ponto de Atenção">Ponto de Atenção Preventivo</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-level">Classificação Técnica *</label>
+            <select id="form-level" required>
+              <option value="R4">R4 - Risco Muito Alto</option>
+              <option value="R3">R3 - Risco Alto</option>
+              <option value="R2">R2 - Risco Médio / Moderado</option>
+              <option value="R1">R1 - Risco Baixo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="form-status">Status Operacional *</label>
+            <select id="form-status" required>
+              <option value="Ativo">Ativo (Em atenção imediata)</option>
+              <option value="Monitoramento">Em Monitoramento Preventivo</option>
+              <option value="Normalizado">Normalizado / Resolvido</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-lat">Latitude</label>
+            <input type="text" id="form-lat" required readonly />
+          </div>
+          <div class="form-group">
+            <label for="form-lng">Longitude</label>
+            <input type="text" id="form-lng" required readonly />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-notes">Observações / Orientações</label>
+          <textarea id="form-notes" rows="3" placeholder="Descreva as condições no local e orientações aos cidadãos..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-form" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar no LocalStorage</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Aviso Legal / Disclaimer Oficial da PJF -->
+  <div class="modal-overlay hidden" id="modal-disclaimer">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Aviso Legal e Fontes Públicas</h3>
+        <button id="btn-close-disclaimer" class="btn-close">&times;</button>
+      </div>
+      <div class="disclaimer-body">
+        <p><strong>Origem dos Dados:</strong> As camadas vetoriais de risco apresentadas são oriundas do <strong>SISURB (Sigmapas)</strong> da <strong>Prefeitura de Juiz de Fora (PJF)</strong>, elaboradas pela Subsecretaria de Proteção e Defesa Civil (SSPDC) e Departamento de Pesquisa e Geoprocessamento (DPGEO).</p>
+        <br />
+        <p><strong>Termo Informativo:</strong> Todos os dados são disponibilizados exclusivamente para fins acadêmicos e informativos. O AlertaJF é um protótipo experimental e <strong>não substitui os canais oficiais de emergência da Defesa Civil (Ligue 199)</strong>.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-ok-disclaimer" class="btn-primary">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bibliotecas Externas via CDN: Leaflet (Mapas) e Turf.js (Análise Espacial) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+  <!-- Ponto de Entrada da Arquitetura MVC -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+sisurb.pjf
+https://sisurb.pjf.mg.gov.br/portal/apps/webappviewer/index.html?id=4bcd071f26a14479ad96123a69aeb3f2
+
+
+
+ArcGIS REST Services Directory:
+https://sisurb.pjf.mg.gov.br/server/rest/services/SISURB_peus
+
+
+Agregar as três famílias de risco (Inundação, Enxurrada e Risco Geológico) transforma o seu projeto em um verdadeiro Sistema Multirrisco (Multi-Hazard) de Juiz de Fora.
+A abordagem mais limpa e modular em ADS consiste em três arquivos GeoJSON independentes com um seletor de camadas no Leaflet e uma verificação unificada no Model.
+Passo 1: Baixar os 3 arquivos GeoJSON oficiais do SISURB
+Abra cada um dos links abaixo no navegador e salve os arquivos na pasta dados/ do seu projeto:
+
+Inundação:
+https://www.google.com/url?sa=E&q=https%3A%2F%2Fsisurb.pjf.mg.gov.br%2Fserver%2Frest%2Fservices%2FSISURB_dcivil%2Finundacao%2FMapServer%2F0%2Fquery%3Fwhere%3D1%253D1%26outFields%3D*%26outSR%3D4326%26f%3Dgeojson
+Salvar como: dados/inundacao.geojson
+
+
+Enxurrada:
+https://sisurb.pjf.mg.gov.br/server/rest/services/SISURB_dcivil/enxurrada/MapServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson
+Salvar como: dados/enxurrada.geojson
+
+
+
+Risco Geológico / Deslizamento (PEUS P6 / Defesa Civil):[1]
+https://sisurb.pjf.mg.gov.br/server/rest/services/SISURB_dcivil/corrida_de_massa/MapServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson
+Salvar como: dados/corrida_massa.geojson
+
+
+
+
+
